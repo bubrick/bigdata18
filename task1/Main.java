@@ -1,18 +1,43 @@
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.Random;
 
 public class Main {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         boolean generate_file = false; // = true; - to generate file
         if (generate_file) {
-            FileOutputStream os = new FileOutputStream("file1.txt");
-            BitOutputStream bos = new BitOutputStream(os);
-            bos.writeBits(new BigInteger("2147483648"));
+            long startTime = System.currentTimeMillis();
+            FileChannel rwChannel = new RandomAccessFile("textfile.txt", "rw").getChannel();
+            byte[] tempbytes = new byte[536870912];
+            ByteBuffer wrBuf;
+            for (int k = 0; k < 4; k++) {
+                wrBuf = rwChannel.map(FileChannel.MapMode.READ_WRITE, tempbytes.length * k, tempbytes.length);
+                Random r = new Random();
+                for (int i = 0; i < 536870912 / 4; i++) {
+                    int value = r.nextInt();
+                    byte[] b = ByteBuffer.allocate(4).putInt(value).array();
+                    tempbytes[4 * i] = b[0];
+                    tempbytes[4 * i + 1] = b[1];
+                    tempbytes[4 * i + 2] = b[2];
+                    tempbytes[4 * i + 3] = b[3];
+                }
+                wrBuf.put(tempbytes);
+                tempbytes = new byte[536870912];
+            }
+            rwChannel.close();
+
+            long finishTime = System.currentTimeMillis();
+            System.out.println("Completion time = " + (finishTime - startTime) + "ms");
+//            FileOutputStream os = new FileOutputStream("file2.txt");
+//            BitOutputStream bos = new BitOutputStream(os);
+//            bos.writeBits(new BigInteger("2147483648"));
         }
         else {
-            FileInputStream inputStream = new FileInputStream("file1.txt");
+            FileInputStream inputStream = new FileInputStream("textfile.txt");
             long startTime = System.currentTimeMillis();
 
             byte bufferImage[] = new byte[inputStream.available() / 4];
